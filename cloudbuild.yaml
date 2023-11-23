@@ -1,0 +1,43 @@
+# cloudbuild.yaml
+
+steps:
+  # 步驟 1: 選擇使用的基礎映像
+  - name: 'node:21'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        npm install
+
+  # 步驟 2: 拷貝專案代碼
+  - name: 'gcr.io/cloud-builders/git'
+    args: ['clone', 'https://github.com/LeeChan-tw/refine-cloud-run.git', '.']
+
+  # 步驟 3: 執行構建或測試命令
+  - name: 'node:21'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        npm run dev
+
+  # 步驟 4: 構建 Docker 映像
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/gcpsa-sandbox/lee-refine-test', '.']
+
+  # 步驟 5: 推送 Docker 映像到 Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/gcpsa-sandbox/lee-refine-test']
+
+  # 步驟 6: 部署到 Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'lee-refine-test'
+      - '--image=gcr.io/gcpsa-sandbox/lee-refine-test'
+      - '--platform=managed'
+      - '--region=your-region'
+
+timeout: '1600s'  # 適當設置 timeout 時間
+
